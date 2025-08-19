@@ -1,0 +1,106 @@
+Code: 
+#include <SoftwareSerial.h>
+#include <Servo.h>
+SoftwareSerial BT(10, 11); // RX | TX for Bluetooth (HC-05)
+Servo seedServo; // Servo for seed dispensing
+#define MOISTURE_SENSOR A0 // Moisture Sensor Analog Pin
+#define MOTOR_IN1 6
+#define MOTOR_IN2 7
+#define MOTOR_IN3 8
+#define MOTOR_IN4 9
+void setup() {
+ Serial.begin(9600); // Serial Monitor for debugging
+ BT.begin(9600); // Bluetooth module communication
+ // Servo motor for seed dispensing
+ seedServo.attach(3); // Servo on Pin D3
+ seedServo.write(0); // Ensure it's closed at start
+ // Motor driver pins setup
+ pinMode(MOTOR_IN1, OUTPUT);
+ pinMode(MOTOR_IN2, OUTPUT);
+ pinMode(MOTOR_IN3, OUTPUT);
+ pinMode(MOTOR_IN4, OUTPUT);
+ // Moisture sensor setup
+ pinMode(MOISTURE_SENSOR, INPUT);
+ // Stop motors initially
+ stopMotors();
+}
+void loop() {
+ // Read moisture sensor data
+ int moistureValue = analogRead(MOISTURE_SENSOR);
+ Serial.print("Moisture Level: ");
+ Serial.println(moistureValue);
+ // Bluetooth control
+ if (BT.available()) {
+ char command = BT.read();
+ Serial.print("Received Command: ");
+ Serial.println(command); // Debugging print
+ executeCommand(command);
+ }
+ delay(500); // Delay for moisture sensor reading
+}
+void executeCommand(char command) {
+ switch (command) {
+ case 'F': // Move Forward
+ Serial.println("Moving Forward");
+ moveForward();
+ break;
+ case 'B': // Move Backward
+ Serial.println("Moving Backward");
+ moveBackward();
+ break;
+ case 'L': // Turn Left
+ Serial.println("Turning Left");
+ turnLeft();
+ break;
+ case 'R': // Turn Right
+ Serial.println("Turning Right");
+ turnRight();
+ break;
+ case 'S': // Stop
+ Serial.println("Stopping");
+ stopMotors();
+ break;
+ case 'O': // Open Seed Dispenser
+ Serial.println("Opening Seed Dispenser");
+ seedServo.write(90);
+ break;
+ case 'C': // Close Seed Dispenser
+ Serial.println("Closing Seed Dispenser");
+ seedServo.write(0);
+ break;
+ default:
+ Serial.println("Unknown Command");
+ stopMotors();
+ break;
+ }
+}
+void moveForward() {
+ digitalWrite(MOTOR_IN1, HIGH);
+ digitalWrite(MOTOR_IN2, LOW);
+ digitalWrite(MOTOR_IN3, HIGH);
+ digitalWrite(MOTOR_IN4, LOW);
+}
+void moveBackward() {
+ digitalWrite(MOTOR_IN1, LOW);
+ digitalWrite(MOTOR_IN2, HIGH);
+ digitalWrite(MOTOR_IN3, LOW);
+ digitalWrite(MOTOR_IN4, HIGH);
+}
+void turnLeft() {
+ digitalWrite(MOTOR_IN1, LOW);
+ digitalWrite(MOTOR_IN2, HIGH);
+ digitalWrite(MOTOR_IN3, HIGH);
+ digitalWrite(MOTOR_IN4, LOW);
+}
+void turnRight() {
+ digitalWrite(MOTOR_IN1, HIGH);
+ digitalWrite(MOTOR_IN2, LOW);
+ digitalWrite(MOTOR_IN3, LOW);
+ digitalWrite(MOTOR_IN4, HIGH);
+}
+void stopMotors() {
+ digitalWrite(MOTOR_IN1, LOW);
+ digitalWrite(MOTOR_IN2, LOW);
+ digitalWrite(MOTOR_IN3, LOW);
+ digitalWrite(MOTOR_IN4, LOW);
+}
