@@ -1,0 +1,55 @@
+#include <Servo.h>
+#include <SoftwareSerial.h>
+// Create a servo object to control the barrier
+Servo barrierServo;
+// Define pin connections
+#define TRIG_PIN 7       // Ultrasonic sensor trigger pin
+#define ECHO_PIN 6       // Ultrasonic sensor echo pin
+#define SERVO_PIN 9      // Servo motor control pin
+#define BUZZER_PIN 8     // Buzzer pin
+#define BT_RX 10         // Bluetooth module RX pin
+#define BT_TX 11         // Bluetooth module TX pin
+// Initialize SoftwareSerial for Bluetooth communication
+SoftwareSerial bluetooth(BT_RX, BT_TX);
+void setup() {
+ pinMode(TRIG_PIN, OUTPUT); // Set trigger pin as output
+ pinMode(ECHO_PIN, INPUT); // Set echo pin as input
+ pinMode(BUZZER_PIN, OUTPUT); // Set buzzer pin as output
+ barrierServo.attach(SERVO_PIN); // Attach servo to the defined pin
+ barrierServo.write(0); // Set servo to initial position (closed)
+ Serial.begin(9600); // Start serial communication
+ bluetooth.begin(9600); // Start Bluetooth communication
+ Serial.println("System Ready");
+ bluetooth.println("Bluetooth Connected!");
+}
+void loop() {
+ long distance = getDistance(); // Get distance from ultrasonic sensor
+ Serial.print("Distance: ");
+ Serial.println(distance);
+ // If an object is detected within 20 cm, open the barrier
+ if (distance < 20) {
+ barrierServo.write(80); // Rotate servo to open position
+ delay(3000); // Keep the barrier open for 3 seconds
+ } else {
+ barrierServo.write(0); // Close the barrier if no object is detected
+ }
+ // If an object is detected within 10 cm, activate the buzzer and send an alert via Bluetooth
+ if (distance < 10) {
+ digitalWrite(BUZZER_PIN, HIGH); // Turn on the buzzer
+ bluetooth.println("ALERT: Object detected within 10 cm!"); // Send alert message
+ delay(200); // Short delay to prevent message spamming
+ } else {
+ digitalWrite(BUZZER_PIN, LOW); // Turn off the buzzer if no close object is detected
+ }
+ delay(100); // Small delay before next sensor reading
+}
+// Function to measure distance using ultrasonic sensor
+long getDistance() {
+ digitalWrite(TRIG_PIN, LOW);
+ delayMicroseconds(2);
+ digitalWrite(TRIG_PIN, HIGH);
+ delayMicroseconds(10);
+ digitalWrite(TRIG_PIN, LOW);
+ long duration = pulseIn(ECHO_PIN, HIGH, 30000); // Measure pulse duration
+ return duration > 0 ? duration * 0.034 / 2 : 400; // Convert duration to distance (cm), return 400 if no object detected
+}
